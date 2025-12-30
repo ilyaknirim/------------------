@@ -11,7 +11,10 @@ function loadRoutes() {
         return;
     }
 
-    routesDatabase.routes.forEach(route => {
+    // Перемешиваем маршруты
+    const shuffledRoutes = [...routesDatabase.routes].sort(() => Math.random() - 0.5);
+
+    shuffledRoutes.forEach(route => {
         const routeCard = createRouteCard(route);
         routesGrid.appendChild(routeCard);
     });
@@ -73,15 +76,10 @@ function createRouteCard(route) {
     return card;
 }
 
-// Фильтрация маршрутов
+// Фильтрация маршрутов (не используется в упрощенной версии)
 function filterRoutes(category) {
-    document.querySelectorAll('.route-card').forEach(card => {
-        if (category === 'all' || card.dataset.category.includes(category)) {
-            card.style.display = 'flex';
-        } else {
-            card.style.display = 'none';
-        }
-    });
+    // Функция не используется в упрощенной версии
+    return;
 }
 
 // Получение маршрута по ID
@@ -147,8 +145,7 @@ function showRouteModal(routeId) {
             </div>
 
             <div>
-                <h3>На карте</h3>
-                <div id="modalMap" style="height: 400px; border-radius: var(--radius-medium); overflow: hidden; margin-bottom: 20px;"></div>
+                <!-- Карта отключена в упрощенной версии -->
 
                 <div style="background: rgba(255, 107, 107, 0.1); padding: 20px; border-radius: var(--radius-medium); border-left: 4px solid var(--color-sunset);">
                     <h4 style="color: var(--color-sunset); margin-bottom: 10px;">
@@ -174,39 +171,39 @@ function showRouteModal(routeId) {
         </div>
     `;
 
-    // Инициализируем карту в модальном окне
-    setTimeout(() => {
-        const modalMap = L.map('modalMap').setView(route.points[0].coords, 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(modalMap);
-
-        // Отображаем маршрут на мини-карте
-        const modalRoutePoints = route.points.map(p => p.coords);
-        L.polyline(modalRoutePoints, {
-            color: route.color,
-            weight: 3,
-            opacity: 0.8
-        }).addTo(modalMap);
-
-        // Добавляем маркеры
-        route.points.forEach((point, index) => {
-            L.marker(point.coords, {
-                icon: L.divIcon({
-                    html: `<div style="background: ${route.color}; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white;">${index + 1}</div>`,
-                    iconSize: [24, 24]
-                })
-            }).addTo(modalMap)
-            .bindPopup(point.title);
-        });
-
-        modalMap.fitBounds(L.polyline(modalRoutePoints).getBounds(), { padding: [20, 20] });
-    }, 100);
+    // Карта в модальном окне отключена в упрощенной версии
+    // setTimeout(() => {
+    //     const modalMap = L.map('modalMap').setView(route.points[0].coords, 14);
+    //     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(modalMap);
+    // 
+    //     // Отображаем маршрут на мини-карте
+    //     const modalRoutePoints = route.points.map(p => p.coords);
+    //     L.polyline(modalRoutePoints, {
+    //         color: route.color,
+    //         weight: 3,
+    //         opacity: 0.8
+    //     }).addTo(modalMap);
+    // 
+    //     // Добавляем маркеры
+    //     route.points.forEach((point, index) => {
+    //         L.marker(point.coords, {
+    //             icon: L.divIcon({
+    //                 html: `<div style="background: ${route.color}; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white;">${index + 1}</div>`,
+    //                 iconSize: [24, 24]
+    //             })
+    //         }).addTo(modalMap)
+    //         .bindPopup(point.title);
+    //     });
+    // 
+    //     modalMap.fitBounds(L.polyline(modalRoutePoints).getBounds(), { padding: [20, 20] });
+    // }, 100);
 
     // Показываем модальное окно
     modal.style.display = 'block';
     document.body.style.overflow = 'hidden';
 
-    // Отображаем маршрут на основной карте
-    MapManager.displayRouteOnMap(route);
+    // Отображение маршрута на основной карте отключено в упрощенной версии
+    // MapManager.displayRouteOnMap(route);
 }
 
 // ===== ГЛОБАЛЬНЫЕ ФУНКЦИИ =====
