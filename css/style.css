@@ -33,6 +33,35 @@
     --transition-slow: 0.5s ease;
 }
 
+/* Сообщение о загрузке */
+.loading-message {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    background: var(--bg-card);
+    border-radius: var(--radius-medium);
+    margin: 20px 0;
+    box-shadow: var(--shadow-soft);
+}
+
+.loading-message::before {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid var(--accent-primary);
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 * {
     margin: 0;
     padding: 0;

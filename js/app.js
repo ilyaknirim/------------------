@@ -1,21 +1,41 @@
-// ===== ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ =====
-document.addEventListener('DOMContentLoaded', async function() {
+// ===== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ =====
+const startPoint = [57.8138, 28.3496]; // Псковский вокзал
+let map = null;
+let currentRouteLayer = null;
+let currentMarkers = [];
+
+// ===== СИСТЕМА МАРШРУТОВ =====
+let routesDatabase = {
+    routes: [] // Будет загружено из JSON файла
+};
+
+// Функция для загрузки маршрутов из JSON файла
+async function loadRoutesFromJSON() {
     try {
-        // Загружаем данные о маршрутах
-        await RoutesManager.loadRoutesData();
-
-        // Инициализируем компоненты
-        MapManager.initializeMap();
-        MapManager.setupMapControls();
-        UIManager.initializeNavigation();
-        RoutesManager.loadRoutes();
-        UIManager.initializeEventListeners();
-        UIManager.initializeScrollEffects();
-
-        console.log('Приложение успешно инициализировано');
+        const response = await fetch('data/routes.json');
+        const data = await response.json();
+        routesDatabase = data;
+        console.log(`Загружено ${data.routes.length} маршрутов`);
+        return data;
     } catch (error) {
-        console.error('Ошибка при инициализации приложения:', error);
+        console.error('Ошибка при загрузке маршрутов:', error);
+        return null;
     }
+}
+
+// ===== ИНИЦИАЛИЗАЦИЯ =====
+document.addEventListener('DOMContentLoaded', async function() {
+    MapManager.initializeMap();
+    MapManager.setupMapControls();
+    UIManager.initializeNavigation();
+    UIManager.initializeEventListeners();
+    UIManager.initializeScrollEffects();
+
+    // Загружаем маршруты из JSON файла
+    await loadRoutesFromJSON();
+    RoutesManager.loadRoutes();
+
+    console.log('Приложение успешно инициализировано');
 });
 
 // ===== ГЛОБАЛЬНЫЕ ФУНКЦИИ =====

@@ -1,10 +1,4 @@
-// ===== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ КАРТЫ =====
-const startPoint = [57.8138, 28.3496]; // Псковский вокзал
-let map = null;
-let currentRouteLayer = null;
-let currentMarkers = [];
-
-// ===== ИНИЦИАЛИЗАЦИЯ КАРТЫ =====
+// ===== КАРТА =====
 function initializeMap() {
     map = L.map('mainMap').setView(startPoint, 14);
 
