@@ -25,6 +25,8 @@ async function loadRoutesFromJSON() {
 
 // ===== ИНИЦИАЛИЗАЦИЯ =====
 document.addEventListener('DOMContentLoaded', async function() {
+    MapManager.initializeMap();
+    MapManager.setupMapControls();
     UIManager.initializeEventListeners();
 
     // Загружаем маршруты из JSON файла
