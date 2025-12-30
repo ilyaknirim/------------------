@@ -177,8 +177,9 @@
         }
 
         .route-image {
-            height: 120px;
-            background: linear-gradient(135deg, #4A90E240, #4A90E280);
+            height: 180px;
+            background-size: cover;
+            background-position: center;
             position: relative;
             overflow: hidden;
         }
@@ -357,11 +358,23 @@
             position: absolute;
             top: 20px;
             right: 20px;
-            background: none;
+            background: rgba(255,255,255,0.8);
             border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
             font-size: 20px;
-            color: #999;
+            color: #333;
             cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            transition: background-color 0.2s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255,255,255,0.95);
         }
 
         .modal-title {
@@ -616,6 +629,7 @@
     <script src="js/mobile-map.js"></script>
     <script src="js/mobile-routes.js"></script>
     <script src="js/mobile-ui.js"></script>
+    <script src="js/mobile-swipe.js"></script>
     <script src="js/mobile-search.js"></script>
     <script src="js/mobile-favorites.js"></script>
 </body>
