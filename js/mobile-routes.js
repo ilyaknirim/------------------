@@ -41,7 +41,7 @@ function createRouteCard(route) {
     };
 
     card.innerHTML = `
-        <div class="route-image" style="background: linear-gradient(135deg, ${route.color}40, ${route.color}80);">
+        <div class="route-image" style="background-image: url('images/routes/${route.image || 'default-route.jpg'}');">
             <div class="route-type">
                 ${route.category.map(cat => `<i class="fas ${categoryIcons[cat]}"></i>`).join(' ')}
                 ${route.category.map(cat => categoryNames[cat]).join(', ')}
@@ -119,6 +119,7 @@ function showRouteModal(routeId) {
                         <div class="point-number">${index + 1}</div>
                         <h4 class="point-title">${point.title}</h4>
                     </div>
+                    ${point.image ? `<img src="images/points/${point.image}" alt="${point.title}" style="width: 100%; border-radius: 8px; margin-bottom: 10px;">` : ''}
                     <p class="point-description">${point.description}</p>
                     <div class="point-activity">
                         <strong>Чем заняться:</strong> ${point.activity}

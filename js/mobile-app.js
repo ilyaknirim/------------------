@@ -12,7 +12,7 @@ let routesDatabase = {
 // Функция для загрузки маршрутов из JSON файла
 async function loadRoutesFromJSON() {
     try {
-        const response = await fetch('data/routes.json');
+        const response = await fetch('data/routes_with_photos.json');
         const data = await response.json();
         routesDatabase = data;
         console.log(`Загружено ${data.routes.length} маршрутов`);
