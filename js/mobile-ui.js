@@ -37,6 +37,27 @@ function initializeEventListeners() {
             showRouteModal(routeId);
         }
     });
+
+    // Обработчики для вкладок фильтрации
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Удаляем активный класс у всех вкладок
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+
+            // Добавляем активный класс к текущей вкладке
+            this.classList.add('active');
+
+            // Получаем категорию для фильтрации
+            const category = this.dataset.category;
+
+            // Загружаем отфильтрованные маршруты
+            if (category === 'all') {
+                RoutesManager.loadRoutes();
+            } else {
+                RoutesManager.loadRoutes(category);
+            }
+        });
+    });
 }
 
 // Функция для закрытия модального окна

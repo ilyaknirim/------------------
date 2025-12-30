@@ -1,22 +1,45 @@
 // ===== ЗАГРУЗКА МАРШРУТОВ =====
-function loadRoutes() {
+async function loadRoutes(filterCategory = null) {
     const routesGrid = document.getElementById('routesGrid');
+
+    // Показываем индикатор загрузки
+    routesGrid.innerHTML = '<div class="loading-message">Загрузка маршрутов...</div>';
+
+    // Если категория указана, загружаем данные для этой категории
+    if (filterCategory && !routesDatabase.routes.some(route => route.category.includes(filterCategory))) {
+        await loadRoutesFromJSON(filterCategory);
+    }
 
     // Очищаем контейнер
     routesGrid.innerHTML = '';
 
     // Проверяем, загружены ли маршруты
     if (routesDatabase.routes.length === 0) {
-        routesGrid.innerHTML = '<div class="loading-message">Загрузка маршрутов...</div>';
+        routesGrid.innerHTML = '<div class="loading-message">Маршруты не найдены</div>';
+        return;
+    }
+
+    // Фильтруем маршруты по категории, если указана
+    let filteredRoutes = [...routesDatabase.routes];
+    if (filterCategory) {
+        filteredRoutes = filteredRoutes.filter(route => route.category.includes(filterCategory));
+    }
+
+    // Проверяем, есть ли маршруты после фильтрации
+    if (filteredRoutes.length === 0) {
+        routesGrid.innerHTML = '<div class="loading-message">Маршруты в этой категории не найдены</div>';
         return;
     }
 
     // Перемешиваем маршруты
-    const shuffledRoutes = [...routesDatabase.routes].sort(() => Math.random() - 0.5);
+    const shuffledRoutes = filteredRoutes.sort(() => Math.random() - 0.5);
 
-    shuffledRoutes.forEach(route => {
-        const routeCard = createRouteCard(route);
-        routesGrid.appendChild(routeCard);
+    // Добавляем карточки маршрутов с задержкой для создания эффекта поочередной загрузки
+    shuffledRoutes.forEach((route, index) => {
+        setTimeout(() => {
+            const routeCard = createRouteCard(route);
+            routesGrid.appendChild(routeCard);
+        }, index * 100); // Задержка 100 мс между карточками
     });
 }
 
@@ -41,7 +64,8 @@ function createRouteCard(route) {
     };
 
     card.innerHTML = `
-        <div class="route-image" style="background-image: url('images/routes/${route.image || 'default-route.jpg'}');">
+        <div class="route-image">
+            <img src="images/routes/${route.image || 'default-route.jpg'}" alt="${route.title}" loading="lazy" style="width: 100%; height: 120px; object-fit: cover; position: absolute; top: 0; left: 0;">
             <div class="route-type">
                 ${route.category.map(cat => `<i class="fas ${categoryIcons[cat]}"></i>`).join(' ')}
                 ${route.category.map(cat => categoryNames[cat]).join(', ')}
@@ -119,7 +143,7 @@ function showRouteModal(routeId) {
                         <div class="point-number">${index + 1}</div>
                         <h4 class="point-title">${point.title}</h4>
                     </div>
-                    ${point.image ? `<img src="images/points/${point.image}" alt="${point.title}" style="width: 100%; border-radius: 8px; margin-bottom: 10px;">` : ''}
+                    ${point.image ? `<img src="images/points/${point.image}" alt="${point.title}" loading="lazy" style="width: 100%; border-radius: 8px; margin-bottom: 10px;">` : ''}
                     <p class="point-description">${point.description}</p>
                     <div class="point-activity">
                         <strong>Чем заняться:</strong> ${point.activity}
@@ -228,5 +252,6 @@ window.RoutesManager = {
     },
     loadRoutes,
     getRouteById,
+    createRouteCard,
     routesDatabase
 };

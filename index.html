@@ -79,6 +79,89 @@
             flex: 1;
         }
 
+        .search-container {
+            padding: 10px 0;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            color: #999;
+            z-index: 2;
+        }
+
+        #searchInput {
+            width: 100%;
+            padding: 10px 15px 10px 40px;
+            border: 1px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 16px;
+            background-color: #f5f5f5;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        #searchInput:focus {
+            border-color: #4A90E2;
+            box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+            background-color: #fff;
+        }
+
+        .search-clear-btn {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease;
+        }
+
+        .search-clear-btn:hover {
+            background-color: #f0f0f0;
+        }
+
+        .filter-tabs {
+            display: flex;
+            overflow-x: auto;
+            padding: 10px 0;
+            margin-bottom: 10px;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE 10+ */
+        }
+
+        .filter-tabs::-webkit-scrollbar {
+            display: none; /* Chrome Safari */
+        }
+
+        .filter-tab {
+            background: #f1f3f5;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            margin-right: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background-color 0.2s ease;
+        }
+
+        .filter-tab.active {
+            background: #4A90E2;
+            color: white;
+        }
+
         .route-card {
             background: white;
             border-radius: 12px;
@@ -98,6 +181,14 @@
             background: linear-gradient(135deg, #4A90E240, #4A90E280);
             position: relative;
             overflow: hidden;
+        }
+
+        .route-image img {
+            transition: transform 0.3s ease;
+        }
+
+        .route-card:hover .route-image img {
+            transform: scale(1.05);
         }
 
         .route-type {
@@ -162,6 +253,52 @@
             display: flex;
             align-items: center;
             gap: 5px;
+        }
+
+        .favorite-btn {
+            background: #f1f3f5;
+            color: #666;
+        }
+
+        .favorite-btn.active {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .favorites-header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .favorites-header h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .no-favorites {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .no-favorites i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #ccc;
+        }
+
+        .no-favorites h3 {
+            margin: 0 0 10px;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .no-favorites p {
+            margin: 0;
+            font-size: 14px;
         }
 
         .map-controls {
@@ -351,6 +488,48 @@
             font-size: 16px;
         }
 
+        .search-results-header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .search-results-header h3 {
+            margin: 0 0 5px;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .search-results-header p {
+            margin: 0;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .no-results i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #ccc;
+        }
+
+        .no-results h3 {
+            margin: 0 0 10px;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .no-results p {
+            margin: 0;
+            font-size: 14px;
+        }
+
         .loading-message::before {
             content: '';
             display: inline-block;
@@ -391,6 +570,22 @@
                 <div class="panel-handle"></div>
             </div>
             <div class="routes-content" id="routesContent">
+                <div class="search-container">
+                    <div class="search-input-wrapper">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="searchInput" placeholder="Поиск маршрутов...">
+                        <button class="search-clear-btn" id="searchClearBtn" style="display: none;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-category="all">Все маршруты</button>
+                    <button class="filter-tab" data-category="city">Городские</button>
+                    <button class="filter-tab" data-category="nature">Природные</button>
+                    <button class="filter-tab" data-category="history">Исторические</button>
+                    <button class="filter-tab" data-category="easy">Для начинающих</button>
+                </div>
                 <div id="routesGrid">
                     <!-- Маршруты будут загружены через JavaScript -->
                 </div>
@@ -421,5 +616,7 @@
     <script src="js/mobile-map.js"></script>
     <script src="js/mobile-routes.js"></script>
     <script src="js/mobile-ui.js"></script>
+    <script src="js/mobile-search.js"></script>
+    <script src="js/mobile-favorites.js"></script>
 </body>
 </html>
