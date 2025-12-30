@@ -181,8 +181,7 @@ function showRouteModal(routeId) {
     }, 100);
 
     // Показываем модальное окно
-    modal.style.display = 'block';
-    document.body.style.overflow = 'hidden';
+    UIManager.openModal();
 
     // Отображаем маршрут на основной карте
     MapManager.displayRouteOnMap(route);

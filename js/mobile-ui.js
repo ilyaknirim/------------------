@@ -1,16 +1,23 @@
 // ===== ОБРАБОТЧИКИ СОБЫТИЙ =====
 function initializeEventListeners() {
     // Закрытие модального окна
-    document.getElementById('modalClose').addEventListener('click', function() {
-        document.getElementById('routeModal').style.display = 'none';
-        document.body.style.overflow = 'auto';
+    document.getElementById('modalClose').addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeModal();
     });
 
     // Клик вне модального окна
     document.getElementById('routeModal').addEventListener('click', function(e) {
         if (e.target === this) {
-            this.style.display = 'none';
-            document.body.style.overflow = 'auto';
+            closeModal();
+        }
+    });
+
+    // Закрытие модального окна по клавише Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeModal();
         }
     });
 
@@ -32,7 +39,27 @@ function initializeEventListeners() {
     });
 }
 
+// Функция для закрытия модального окна
+function closeModal() {
+    const modal = document.getElementById('routeModal');
+    if (modal && modal.style.display !== 'none') {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// Функция для открытия модального окна
+function openModal() {
+    const modal = document.getElementById('routeModal');
+    if (modal) {
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
 // Экспорт функций
 window.UIManager = {
-    initializeEventListeners
+    initializeEventListeners,
+    closeModal,
+    openModal
 };
