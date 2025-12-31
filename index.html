@@ -121,12 +121,26 @@
             color: #aaa;
             cursor: pointer;
             transition: all 0.2s ease;
+            opacity: 0.7;
+        }
+
+        /* Эффект приближения к центру */
+        .route-item.near-center {
+            font-size: 20px;
+            opacity: 0.85;
+        }
+
+        /* Эффект удаления от центра */
+        .route-item.far-from-center {
+            font-size: 16px;
+            opacity: 0.5;
         }
 
         .route-item.active {
             color: #2196F3;
             font-size: 24px;
             transform: scale(1.1);
+            text-shadow: 0 0 5px rgba(33, 150, 243, 0.5);
         }
 
         .route-picker-overlay {
@@ -416,7 +430,11 @@
 
         // Функция для установки позиции слайдера
         function setPositionByIndex() {
-            currentTranslate = currentIndex * -itemWidth;
+            // Вычисляем позицию с учетом центрирования выбранного элемента
+            // Центральный элемент должен быть в центре контейнера
+            const containerWidth = document.querySelector('.route-picker').offsetWidth;
+            const centerOffset = containerWidth / 2 - itemWidth / 2;
+            currentTranslate = centerOffset - currentIndex * itemWidth;
             previousTranslate = currentTranslate;
             setSliderPosition();
         }
@@ -424,6 +442,34 @@
         // Функция для установки позиции слайдера с анимацией
         function setSliderPosition() {
             routePickerInner.style.transform = `translateX(${currentTranslate}px)`;
+
+            // Обновляем стили элементов в зависимости от их положения
+            updateItemStyles();
+        }
+
+        // Функция для обновления стилей элементов в зависимости от их положения
+        function updateItemStyles() {
+            const containerWidth = document.querySelector('.route-picker').offsetWidth;
+            const centerOffset = containerWidth / 2 - itemWidth / 2;
+            const items = document.querySelectorAll('.route-item');
+
+            items.forEach((item, index) => {
+                // Удаляем все классы стилей
+                item.classList.remove('active', 'near-center', 'far-from-center');
+
+                // Вычисляем расстояние от центра
+                const itemPosition = index * itemWidth;
+                const distanceFromCenter = Math.abs(centerOffset - currentTranslate - itemPosition);
+
+                // Применяем соответствующий класс в зависимости от расстояния
+                if (distanceFromCenter < itemWidth / 2) {
+                    item.classList.add('active');
+                } else if (distanceFromCenter < itemWidth * 1.5) {
+                    item.classList.add('near-center');
+                } else if (distanceFromCenter > itemWidth * 2) {
+                    item.classList.add('far-from-center');
+                }
+            });
         }
 
         // Функция для анимации инерциальной прокрутки
@@ -432,8 +478,8 @@
                 cancelAnimationFrame(animationID);
             }
 
-            const momentum = currentTranslate - previousTranslate;
-            const friction = 0.95;
+            let momentum = currentTranslate - previousTranslate;
+            const friction = 0.92;
 
             function animate() {
                 if (Math.abs(momentum) < 0.5) {
@@ -443,8 +489,11 @@
                 }
 
                 previousTranslate = currentTranslate;
-                currentTranslate += momentum * friction;
+                currentTranslate += momentum;
                 setSliderPosition();
+
+                // Уменьшаем импульс
+                momentum *= friction;
 
                 animationID = requestAnimationFrame(animate);
             }
@@ -454,8 +503,10 @@
 
         // Функция для привязки к ближайшему элементу
         function snapToClosest() {
-            // Вычисляем ближайший индекс на основе текущей позиции
-            const roundedIndex = Math.round(-currentTranslate / itemWidth);
+            // Вычисляем ближайший индекс на основе текущей позиции с учетом центрирования
+            const containerWidth = document.querySelector('.route-picker').offsetWidth;
+            const centerOffset = containerWidth / 2 - itemWidth / 2;
+            const roundedIndex = Math.round((centerOffset - currentTranslate) / itemWidth);
             currentIndex = Math.max(0, Math.min(roundedIndex, routes.length - 1));
             setPositionByIndex();
 
@@ -477,6 +528,7 @@
 
         // Обработчик движения пальца
         routePicker.addEventListener('touchmove', e => {
+            e.preventDefault(); // Предотвращаем прокрутку страницы
             touchEndX = e.changedTouches[0].screenX;
             const diff = touchStartX - touchEndX;
 
@@ -516,6 +568,97 @@
             } else {
                 snapToClosest();
             }
+        });
+
+        // Добавляем поддержку мыши для десктопных устройств
+        let mouseDown = false;
+
+        routePicker.addEventListener('mousedown', e => {
+            mouseDown = true;
+            touchStartX = e.screenX;
+            touchStartTime = Date.now();
+
+            // Отменяем текущую анимацию, если она есть
+            if (animationID) {
+                cancelAnimationFrame(animationID);
+                animationID = null;
+            }
+        });
+
+        routePicker.addEventListener('mousemove', e => {
+            if (!mouseDown) return;
+
+            touchEndX = e.screenX;
+            const diff = touchStartX - touchEndX;
+
+            // Обновляем позицию слайдера в реальном времени
+            currentTranslate = previousTranslate - diff;
+            setSliderPosition();
+        });
+
+        routePicker.addEventListener('mouseup', e => {
+            if (!mouseDown) return;
+            mouseDown = false;
+
+            touchEndX = e.screenX;
+            const diff = touchStartX - touchEndX;
+            const touchEndTime = Date.now();
+            const timeDiff = touchEndTime - touchStartTime;
+
+            // Определяем скорость свайпа
+            const velocity = Math.abs(diff) / timeDiff;
+
+            // Если скорость достаточно высокая или свайп достаточно длинный, переключаем маршрут
+            if (velocity > 0.3 || Math.abs(diff) > 30) {
+                if (diff > 0) {
+                    // Свайп влево - следующий маршрут
+                    if (currentIndex < routes.length - 1) {
+                        currentIndex++;
+                    }
+                } else {
+                    // Свайп вправо - предыдущий маршрут
+                    if (currentIndex > 0) {
+                        currentIndex--;
+                    }
+                }
+            }
+
+            // Применяем анимацию или привязку к ближайшему элементу
+            if (velocity > 0.3) {
+                animation();
+            } else {
+                snapToClosest();
+            }
+        });
+
+        routePicker.addEventListener('mouseleave', e => {
+            if (!mouseDown) return;
+            mouseDown = false;
+            snapToClosest();
+        });
+
+        // Инициализация слайдера после загрузки DOM
+        document.addEventListener('DOMContentLoaded', () => {
+            // Инициализируем переменные слайдера
+            const routePicker = document.querySelector('.route-picker');
+            const routePickerInner = document.getElementById('routePickerInner');
+
+            // Устанавливаем начальную позицию слайдера
+            if (routePicker && routePickerInner) {
+                const containerWidth = routePicker.offsetWidth;
+                const centerOffset = containerWidth / 2 - itemWidth / 2;
+                currentTranslate = centerOffset;
+                previousTranslate = currentTranslate;
+                setSliderPosition();
+            }
+
+            // Добавляем обработчик изменения размера окна
+            window.addEventListener('resize', () => {
+                if (routePicker && routePickerInner) {
+                    // Пересчитываем позицию с учетом нового размера
+                    setPositionByIndex();
+                }
+            });
         });
 
         // Загружаем маршруты при загрузке страницы
