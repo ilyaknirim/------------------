@@ -74,39 +74,88 @@
             bottom: 0;
             left: 0;
             right: 0;
-            height: 60px;
+            height: 80px;
             background: #fff;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            padding: 0 15px;
+            padding: 5px 15px;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
             z-index: 1000;
+            touch-action: pan-y;
         }
 
         .route-slider {
             width: 100%;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .route-number {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #e0e0e0;
+            height: 100%;
+            position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
         }
 
-        .route-number.active {
-            background: #2196F3;
-            color: white;
-            transform: scale(1.2);
+        .route-picker {
+            position: relative;
+            width: 100%;
+            height: 60px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .route-picker-inner {
+            display: flex;
+            transition: transform 0.3s ease;
+            padding: 0 30px;
+        }
+
+        .route-item {
+            flex: 0 0 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .route-item.active {
+            color: #2196F3;
+            font-size: 24px;
+            transform: scale(1.1);
+        }
+
+        .route-picker-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to right, 
+                rgba(255,255,255,1) 0%, 
+                rgba(255,255,255,0.7) 15%, 
+                rgba(255,255,255,0) 50%, 
+                rgba(255,255,255,0.7) 85%, 
+                rgba(255,255,255,1) 100%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .route-picker-center {
+            position: absolute;
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 50px;
+            border-top: 2px solid #2196F3;
+            border-bottom: 2px solid #2196F3;
+            pointer-events: none;
+            z-index: 2;
         }
 
         .point-popup {
@@ -187,8 +236,14 @@
     </div>
 
     <div class="slider-container">
-        <div class="route-slider" id="routeSlider">
-            <!-- Маршруты будут добавлены динамически -->
+        <div class="route-slider">
+            <div class="route-picker">
+                <div class="route-picker-inner" id="routePickerInner">
+                    <!-- Маршруты будут добавлены динамически -->
+                </div>
+                <div class="route-picker-overlay"></div>
+                <div class="route-picker-center"></div>
+            </div>
         </div>
     </div>
 
@@ -235,6 +290,8 @@
                 // Показываем первый маршрут
                 if (routes.length > 0) {
                     showRoute(0);
+                    // Устанавливаем начальную позицию слайдера
+                    setPositionByIndex();
                 }
 
                 // Скрываем индикатор загрузки
@@ -247,17 +304,19 @@
 
         // Создание слайдера маршрутов
         function createRouteSlider() {
-            const slider = document.getElementById('routeSlider');
+            const pickerInner = document.getElementById('routePickerInner');
 
             routes.forEach((route, index) => {
-                const routeNumber = document.createElement('div');
-                routeNumber.className = 'route-number';
-                routeNumber.textContent = route.id;
-                routeNumber.addEventListener('click', () => {
+                const routeItem = document.createElement('div');
+                routeItem.className = 'route-item';
+                routeItem.textContent = route.id;
+                routeItem.addEventListener('click', () => {
+                    currentIndex = index;
+                    setPositionByIndex();
                     showRoute(index);
                 });
 
-                slider.appendChild(routeNumber);
+                pickerInner.appendChild(routeItem);
             });
         }
 
@@ -265,7 +324,9 @@
         function showRoute(index) {
             if (index < 0 || index >= routes.length) return;
 
+            // Синхронизируем индексы
             currentRouteIndex = index;
+            currentIndex = index;
 
             // Удаляем предыдущий маршрут и маркеры
             if (currentRouteLayer) {
@@ -278,13 +339,16 @@
             markers = [];
 
             // Обновляем активный элемент слайдера
-            document.querySelectorAll('.route-number').forEach((el, i) => {
+            document.querySelectorAll('.route-item').forEach((el, i) => {
                 if (i === index) {
                     el.classList.add('active');
                 } else {
                     el.classList.remove('active');
                 }
             });
+
+            // Центрируем выбранный маршрут в слайдере
+            setPositionByIndex();
 
             const route = routes[index];
 
@@ -337,37 +401,122 @@
             map.fitBounds(group.getBounds().pad(0.1));
         }
 
-        // Добавляем свайп для переключения маршрутов
+        // Добавляем свайп и инерциальную прокрутку для слайдера маршрутов
         let touchStartX = 0;
         let touchEndX = 0;
+        let touchStartTime = 0;
+        let currentTranslate = 0;
+        let previousTranslate = 0;
+        let animationID = null;
+        let currentIndex = 0;
 
-        document.addEventListener('touchstart', e => {
+        const routePicker = document.querySelector('.route-picker');
+        const routePickerInner = document.getElementById('routePickerInner');
+        const itemWidth = 50; // ширина одного элемента
+
+        // Функция для установки позиции слайдера
+        function setPositionByIndex() {
+            currentTranslate = currentIndex * -itemWidth;
+            previousTranslate = currentTranslate;
+            setSliderPosition();
+        }
+
+        // Функция для установки позиции слайдера с анимацией
+        function setSliderPosition() {
+            routePickerInner.style.transform = `translateX(${currentTranslate}px)`;
+        }
+
+        // Функция для анимации инерциальной прокрутки
+        function animation() {
+            if (animationID) {
+                cancelAnimationFrame(animationID);
+            }
+
+            const momentum = currentTranslate - previousTranslate;
+            const friction = 0.95;
+
+            function animate() {
+                if (Math.abs(momentum) < 0.5) {
+                    // Останавливаем анимацию, если импульс слишком мал
+                    snapToClosest();
+                    return;
+                }
+
+                previousTranslate = currentTranslate;
+                currentTranslate += momentum * friction;
+                setSliderPosition();
+
+                animationID = requestAnimationFrame(animate);
+            }
+
+            animate();
+        }
+
+        // Функция для привязки к ближайшему элементу
+        function snapToClosest() {
+            // Вычисляем ближайший индекс на основе текущей позиции
+            const roundedIndex = Math.round(-currentTranslate / itemWidth);
+            currentIndex = Math.max(0, Math.min(roundedIndex, routes.length - 1));
+            setPositionByIndex();
+
+            // Показываем маршрут для выбранного индекса
+            showRoute(currentIndex);
+        }
+
+        // Обработчик начала касания
+        routePicker.addEventListener('touchstart', e => {
             touchStartX = e.changedTouches[0].screenX;
+            touchStartTime = Date.now();
+
+            // Отменяем текущую анимацию, если она есть
+            if (animationID) {
+                cancelAnimationFrame(animationID);
+                animationID = null;
+            }
         });
 
-        document.addEventListener('touchend', e => {
+        // Обработчик движения пальца
+        routePicker.addEventListener('touchmove', e => {
             touchEndX = e.changedTouches[0].screenX;
-            handleSwipe();
-        });
-
-        function handleSwipe() {
-            const swipeThreshold = 50;
             const diff = touchStartX - touchEndX;
 
-            if (Math.abs(diff) > swipeThreshold) {
+            // Обновляем позицию слайдера в реальном времени
+            currentTranslate = previousTranslate - diff;
+            setSliderPosition();
+        });
+
+        // Обработчик окончания касания
+        routePicker.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            const diff = touchStartX - touchEndX;
+            const touchEndTime = Date.now();
+            const timeDiff = touchEndTime - touchStartTime;
+
+            // Определяем скорость свайпа
+            const velocity = Math.abs(diff) / timeDiff;
+
+            // Если скорость достаточно высокая или свайп достаточно длинный, переключаем маршрут
+            if (velocity > 0.3 || Math.abs(diff) > 30) {
                 if (diff > 0) {
                     // Свайп влево - следующий маршрут
-                    if (currentRouteIndex < routes.length - 1) {
-                        showRoute(currentRouteIndex + 1);
+                    if (currentIndex < routes.length - 1) {
+                        currentIndex++;
                     }
                 } else {
                     // Свайп вправо - предыдущий маршрут
-                    if (currentRouteIndex > 0) {
-                        showRoute(currentRouteIndex - 1);
+                    if (currentIndex > 0) {
+                        currentIndex--;
                     }
                 }
             }
-        }
+
+            // Применяем анимацию или привязку к ближайшему элементу
+            if (velocity > 0.3) {
+                animation();
+            } else {
+                snapToClosest();
+            }
+        });
 
         // Загружаем маршруты при загрузке страницы
         loadRoutes();
