@@ -46,6 +46,38 @@
             overflow-y: auto;
         }
 
+        /* Адаптивность для панели информации на мобильных устройствах */
+        @media (max-height: 700px) {
+            .route-info {
+                max-height: 45vh;
+            }
+        }
+
+        @media (max-height: 500px) {
+            .route-info {
+                max-height: 40vh;
+            }
+        }
+
+        /* Стилизация полосы прокрутки для панели информации */
+        .route-info::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .route-info::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .route-info::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .route-info::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
         .route-info.hidden {
             transform: translateY(100%);
         }
@@ -251,6 +283,21 @@
 
         .point-popup {
             max-width: 280px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        /* Адаптивность для мобильных устройств */
+        @media (max-height: 700px) {
+            .point-popup {
+                max-height: 60vh;
+            }
+        }
+
+        @media (max-height: 500px) {
+            .point-popup {
+                max-height: 50vh;
+            }
         }
 
         .point-popup h3 {
@@ -311,6 +358,25 @@
 
         .point-popup div > i {
             margin-right: 5px;
+        }
+
+        /* Стилизация полосы прокрутки для всплывающих окон */
+        .point-popup::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .point-popup::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .point-popup::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .point-popup::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
         }
 
         .custom-marker {
