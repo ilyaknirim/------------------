@@ -432,6 +432,44 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .route-selector {
+            position: absolute;
+            bottom: 20px;
+            left: 15px;
+            right: 15px;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .route-dropdown {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 20px;
+            padding-right: 40px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .route-dropdown:hover {
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+        }
+
+        .route-dropdown:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -469,16 +507,11 @@
         </div>
     </div>
 
-    <div class="slider-container">
-        <div class="route-slider">
-            <div class="route-picker">
-                <div class="route-picker-inner" id="routePickerInner">
-                    <!-- Маршруты будут добавлены динамически -->
-                </div>
-                <div class="route-picker-overlay"></div>
-                <div class="route-picker-center"></div>
-            </div>
-        </div>
+    <div class="route-selector">
+        <select id="routeSelect" class="route-dropdown">
+            <option value="" disabled selected>Выберите маршрут</option>
+            <!-- Маршруты будут добавлены динамически -->
+        </select>
     </div>
 
     <script>
@@ -551,14 +584,14 @@
                 // Сортируем маршруты по ID
                 routes.sort((a, b) => a.id - b.id);
 
-                // Создаем слайдер
-                createRouteSlider();
+                // Создаем выпадающий список
+                createRouteDropdown();
 
                 // Показываем первый маршрут
                 if (routes.length > 0) {
+                    // Автоматически выбираем первый маршрут
+                    document.getElementById('routeSelect').value = '0';
                     showRoute(0);
-                    // Устанавливаем начальную позицию слайдера
-                    setPositionByIndex();
                 }
 
                 // Скрываем индикатор загрузки
@@ -569,21 +602,23 @@
             }
         }
 
-        // Создание слайдера маршрутов
-        function createRouteSlider() {
-            const pickerInner = document.getElementById('routePickerInner');
+        // Создание выпадающего списка маршрутов
+        function createRouteDropdown() {
+            const routeSelect = document.getElementById('routeSelect');
 
             routes.forEach((route, index) => {
-                const routeItem = document.createElement('div');
-                routeItem.className = 'route-item';
-                routeItem.textContent = route.id;
-                routeItem.addEventListener('click', () => {
-                    currentIndex = index;
-                    setPositionByIndex();
-                    showRoute(index);
-                });
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${route.id}. ${route.title}`;
+                routeSelect.appendChild(option);
+            });
 
-                pickerInner.appendChild(routeItem);
+            // Добавляем обработчик изменения выбора
+            routeSelect.addEventListener('change', (e) => {
+                const selectedIndex = parseInt(e.target.value);
+                if (!isNaN(selectedIndex)) {
+                    showRoute(selectedIndex);
+                }
             });
         }
 
@@ -593,7 +628,9 @@
 
             // Синхронизируем индексы
             currentRouteIndex = index;
-            currentIndex = index;
+
+            // Синхронизируем с выпадающим списком
+            document.getElementById('routeSelect').value = index;
 
             // Удаляем предыдущий маршрут и маркеры
             if (currentRouteLayer) {
@@ -721,256 +758,11 @@
             map.fitBounds(group.getBounds().pad(0.1));
         }
 
-        // Добавляем свайп и инерциальную прокрутку для слайдера маршрутов
-        let touchStartX = 0;
-        let touchEndX = 0;
-        let touchStartTime = 0;
-        let currentTranslate = 0;
-        let previousTranslate = 0;
-        let animationID = null;
-        let currentIndex = 0;
-
-        const routePicker = document.querySelector('.route-picker');
-        const routePickerInner = document.getElementById('routePickerInner');
-        const itemWidth = 50; // ширина одного элемента
-
-        // Функция для установки позиции слайдера
-        function setPositionByIndex() {
-            // Вычисляем позицию с учетом центрирования выбранного элемента
-            // Центральный элемент должен быть в центре контейнера
-            const containerWidth = document.querySelector('.route-picker').offsetWidth;
-            const centerOffset = containerWidth / 2 - itemWidth / 2;
-            currentTranslate = centerOffset - currentIndex * itemWidth;
-            previousTranslate = currentTranslate;
-            setSliderPosition();
-        }
-
-        // Функция для установки позиции слайдера с анимацией
-        function setSliderPosition() {
-            routePickerInner.style.transform = `translateX(${currentTranslate}px)`;
-
-            // Обновляем стили элементов в зависимости от их положения
-            updateItemStyles();
-        }
-
-        // Функция для обновления стилей элементов в зависимости от их положения
-        function updateItemStyles() {
-            const containerWidth = document.querySelector('.route-picker').offsetWidth;
-            const centerOffset = containerWidth / 2 - itemWidth / 2;
-            const items = document.querySelectorAll('.route-item');
-
-            items.forEach((item, index) => {
-                // Удаляем все классы стилей
-                item.classList.remove('active', 'near-center', 'far-from-center', 'route-item-visible');
-
-                // Вычисляем расстояние от центра
-                const itemPosition = index * itemWidth;
-                const distanceFromCenter = Math.abs(centerOffset - currentTranslate - itemPosition);
-
-                // Определяем, находится ли элемент в видимой зоне
-                const isVisible = distanceFromCenter < containerWidth / 2;
-
-                if (isVisible) {
-                    item.classList.add('route-item-visible');
-                }
-
-                // Применяем соответствующий класс в зависимости от расстояния
-                if (distanceFromCenter < itemWidth / 2) {
-                    item.classList.add('active');
-                } else if (distanceFromCenter < itemWidth * 1.5) {
-                    item.classList.add('near-center');
-                } else if (distanceFromCenter > itemWidth * 2) {
-                    item.classList.add('far-from-center');
-                }
-            });
-        }
-
-        // Функция для анимации инерциальной прокрутки
-        function animation() {
-            if (animationID) {
-                cancelAnimationFrame(animationID);
-            }
-
-            let momentum = currentTranslate - previousTranslate;
-            const friction = 0.92;
-
-            function animate() {
-                if (Math.abs(momentum) < 0.5) {
-                    // Останавливаем анимацию, если импульс слишком мал
-                    snapToClosest();
-                    return;
-                }
-
-                previousTranslate = currentTranslate;
-                currentTranslate += momentum;
-                setSliderPosition();
-
-                // Уменьшаем импульс
-                momentum *= friction;
-
-                animationID = requestAnimationFrame(animate);
-            }
-
-            animate();
-        }
-
-        // Функция для привязки к ближайшему элементу
-        function snapToClosest() {
-            // Вычисляем ближайший индекс на основе текущей позиции с учетом центрирования
-            const containerWidth = document.querySelector('.route-picker').offsetWidth;
-            const centerOffset = containerWidth / 2 - itemWidth / 2;
-            const roundedIndex = Math.round((centerOffset - currentTranslate) / itemWidth);
-            currentIndex = Math.max(0, Math.min(roundedIndex, routes.length - 1));
-            setPositionByIndex();
-
-            // Показываем маршрут для выбранного индекса
-            showRoute(currentIndex);
-        }
-
-        // Обработчик начала касания
-        routePicker.addEventListener('touchstart', e => {
-            touchStartX = e.changedTouches[0].screenX;
-            touchStartTime = Date.now();
-
-            // Отменяем текущую анимацию, если она есть
-            if (animationID) {
-                cancelAnimationFrame(animationID);
-                animationID = null;
-            }
-        });
-
-        // Обработчик движения пальца
-        routePicker.addEventListener('touchmove', e => {
-            e.preventDefault(); // Предотвращаем прокрутку страницы
-            touchEndX = e.changedTouches[0].screenX;
-            const diff = touchStartX - touchEndX;
-
-            // Обновляем позицию слайдера в реальном времени
-            currentTranslate = previousTranslate - diff;
-            setSliderPosition();
-        });
-
-        // Обработчик окончания касания
-        routePicker.addEventListener('touchend', e => {
-            touchEndX = e.changedTouches[0].screenX;
-            const diff = touchStartX - touchEndX;
-            const touchEndTime = Date.now();
-            const timeDiff = touchEndTime - touchStartTime;
-
-            // Определяем скорость свайпа
-            const velocity = Math.abs(diff) / timeDiff;
-
-            // Если скорость достаточно высокая или свайп достаточно длинный, переключаем маршрут
-            if (velocity > 0.3 || Math.abs(diff) > 30) {
-                if (diff > 0) {
-                    // Свайп влево - следующий маршрут
-                    if (currentIndex < routes.length - 1) {
-                        currentIndex++;
-                    }
-                } else {
-                    // Свайп вправо - предыдущий маршрут
-                    if (currentIndex > 0) {
-                        currentIndex--;
-                    }
-                }
-            }
-
-            // Применяем анимацию или привязку к ближайшему элементу
-            if (velocity > 0.3) {
-                animation();
-            } else {
-                snapToClosest();
-            }
-        });
-
-        // Добавляем поддержку мыши для десктопных устройств
-        let mouseDown = false;
-
-        routePicker.addEventListener('mousedown', e => {
-            mouseDown = true;
-            touchStartX = e.screenX;
-            touchStartTime = Date.now();
-
-            // Отменяем текущую анимацию, если она есть
-            if (animationID) {
-                cancelAnimationFrame(animationID);
-                animationID = null;
-            }
-        });
-
-        routePicker.addEventListener('mousemove', e => {
-            if (!mouseDown) return;
-
-            touchEndX = e.screenX;
-            const diff = touchStartX - touchEndX;
-
-            // Обновляем позицию слайдера в реальном времени
-            currentTranslate = previousTranslate - diff;
-            setSliderPosition();
-        });
-
-        routePicker.addEventListener('mouseup', e => {
-            if (!mouseDown) return;
-            mouseDown = false;
-
-            touchEndX = e.screenX;
-            const diff = touchStartX - touchEndX;
-            const touchEndTime = Date.now();
-            const timeDiff = touchEndTime - touchStartTime;
-
-            // Определяем скорость свайпа
-            const velocity = Math.abs(diff) / timeDiff;
-
-            // Если скорость достаточно высокая или свайп достаточно длинный, переключаем маршрут
-            if (velocity > 0.3 || Math.abs(diff) > 30) {
-                if (diff > 0) {
-                    // Свайп влево - следующий маршрут
-                    if (currentIndex < routes.length - 1) {
-                        currentIndex++;
-                    }
-                } else {
-                    // Свайп вправо - предыдущий маршрут
-                    if (currentIndex > 0) {
-                        currentIndex--;
-                    }
-                }
-            }
-
-            // Применяем анимацию или привязку к ближайшему элементу
-            if (velocity > 0.3) {
-                animation();
-            } else {
-                snapToClosest();
-            }
-        });
-
-        routePicker.addEventListener('mouseleave', e => {
-            if (!mouseDown) return;
-            mouseDown = false;
-            snapToClosest();
-        });
-
-        // Инициализация слайдера после загрузки DOM
+        // Инициализация после загрузки DOM
         document.addEventListener('DOMContentLoaded', () => {
-            // Инициализируем переменные слайдера
-            const routePicker = document.querySelector('.route-picker');
-            const routePickerInner = document.getElementById('routePickerInner');
-
-            // Устанавливаем начальную позицию слайдера
-            if (routePicker && routePickerInner) {
-                const containerWidth = routePicker.offsetWidth;
-                const centerOffset = containerWidth / 2 - itemWidth / 2;
-                currentTranslate = centerOffset;
-                previousTranslate = currentTranslate;
-                setSliderPosition();
-            }
-
             // Добавляем обработчик изменения размера окна
             window.addEventListener('resize', () => {
-                if (routePicker && routePickerInner) {
-                    // Пересчитываем позицию с учетом нового размера
-                    setPositionByIndex();
-                }
+                // Ничего дополнительно не нужно, так как выпадающий список адаптивный
             });
         });
 
