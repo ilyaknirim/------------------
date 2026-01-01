@@ -448,8 +448,7 @@
             text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
 
             // Заменяем переносы строк на <br>
-            text = text.replace(/
-/g, '<br>');
+            text = text.replace(/\n/g, '<br>');
 
             return text;
         }
