@@ -642,17 +642,7 @@
             });
             markers = [];
 
-            // Обновляем активный элемент слайдера
-            document.querySelectorAll('.route-item').forEach((el, i) => {
-                if (i === index) {
-                    el.classList.add('active');
-                } else {
-                    el.classList.remove('active');
-                }
-            });
-
-            // Центрируем выбранный маршрут в слайдере
-            setPositionByIndex();
+            // Удаляем предыдущие маркеры и маршрут
 
             const route = routes[index];
 
