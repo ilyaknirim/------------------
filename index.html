@@ -32,7 +32,7 @@
 
         .route-info {
             position: absolute;
-            bottom: 60px;
+            bottom: 80px;
             left: 0;
             right: 0;
             background: rgba(255, 255, 255, 0.95);
@@ -42,17 +42,46 @@
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
             z-index: 1000;
             transition: transform 0.3s ease;
+            max-height: 50vh;
+            overflow-y: auto;
         }
 
         .route-info.hidden {
             transform: translateY(100%);
         }
 
+        .route-info.collapsed {
+            max-height: 120px;
+            overflow: hidden;
+        }
+
+        .route-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
         .route-title {
             font-size: 18px;
             font-weight: bold;
-            margin-bottom: 5px;
             color: #333;
+            flex: 1;
+        }
+
+        .route-categories {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .category-tag {
+            background: #e0e0e0;
+            color: #555;
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 12px;
         }
 
         .route-details {
@@ -67,6 +96,54 @@
             font-size: 14px;
             color: #555;
             line-height: 1.4;
+            margin-bottom: 15px;
+        }
+
+        .route-additional-info {
+            margin-top: 10px;
+        }
+
+        .info-section {
+            margin-bottom: 15px;
+        }
+
+        .info-section-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-section-content {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.4;
+        }
+
+        .route-toggle {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .route-toggle:hover {
+            background: rgba(255, 255, 255, 1);
+        }
+
+        .route-info.collapsed .route-toggle i {
+            transform: rotate(180deg);
         }
 
         .slider-container {
@@ -173,12 +250,13 @@
         }
 
         .point-popup {
-            max-width: 250px;
+            max-width: 280px;
         }
 
         .point-popup h3 {
             margin: 0 0 5px 0;
             font-size: 16px;
+            color: #333;
         }
 
         .point-popup p {
@@ -189,6 +267,50 @@
         .point-popup .emotion {
             font-style: italic;
             color: #666;
+        }
+
+        .point-popup .warning {
+            margin-top: 10px;
+            padding: 8px;
+            background: #fff3cd;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #856404;
+            border-left: 3px solid #ffc107;
+        }
+
+        .point-popup .transition {
+            margin-top: 10px;
+            padding: 8px;
+            background: #d1ecf1;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #0c5460;
+            border-left: 3px solid #17a2b8;
+        }
+
+        .point-popup .landmark {
+            margin-top: 10px;
+            padding: 8px;
+            background: #d4edda;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #155724;
+            border-left: 3px solid #28a745;
+        }
+
+        .point-popup .entrance {
+            margin-top: 10px;
+            padding: 8px;
+            background: #f8d7da;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #721c24;
+            border-left: 3px solid #dc3545;
+        }
+
+        .point-popup div > i {
+            margin-right: 5px;
         }
 
         .custom-marker {
@@ -239,7 +361,10 @@
     </div>
 
     <div class="route-info hidden" id="routeInfo">
-        <div class="route-title" id="routeTitle"></div>
+        <div class="route-header">
+            <div class="route-title" id="routeTitle"></div>
+            <div class="route-categories" id="routeCategories"></div>
+        </div>
         <div class="route-details">
             <div><i class="fas fa-route"></i> <span id="routeDistance"></span></div>
             <div><i class="fas fa-clock"></i> <span id="routeDuration"></span></div>
@@ -247,6 +372,19 @@
             <div><i class="fas fa-walking"></i> <span id="routeType"></span></div>
         </div>
         <div class="route-description" id="routeDescription"></div>
+        <div class="route-additional-info">
+            <div class="info-section">
+                <div class="info-section-title"><i class="fas fa-map-marked-alt"></i> Как добраться</div>
+                <div class="info-section-content" id="routeHowToGet"></div>
+            </div>
+            <div class="info-section">
+                <div class="info-section-title"><i class="fas fa-lightbulb"></i> Советы</div>
+                <div class="info-section-content" id="routeTips"></div>
+            </div>
+        </div>
+        <div class="route-toggle" id="routeToggle">
+            <i class="fas fa-chevron-up"></i>
+        </div>
     </div>
 
     <div class="slider-container">
@@ -281,6 +419,40 @@
         let currentRouteIndex = 0;
         let currentRouteLayer = null;
         let markers = [];
+
+        // Функция для получения названия категории на русском языке
+        function getCategoryName(category) {
+            const categoryNames = {
+                'history': 'История',
+                'city': 'Город',
+                'architecture': 'Архитектура',
+                'nature': 'Природа',
+                'eco': 'Экология',
+                'outdoor': 'Активный отдых',
+                'hiking': 'Походы',
+                'wildlife': 'Дикая природа',
+                'protected_area': 'Заповедник'
+            };
+
+            return categoryNames[category] || category;
+        }
+
+        // Функция для форматирования текста с поддержкой простого markdown
+        function formatText(text) {
+            if (!text) return '';
+
+            // Заменяем **жирный текст** на <strong>жирный текст</strong>
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+            // Заменяем *курсив* на <em>курсив</em>
+            text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+            // Заменяем переносы строк на <br>
+            text = text.replace(/
+/g, '<br>');
+
+            return text;
+        }
 
         // Функция загрузки маршрутов
         async function loadRoutes() {
@@ -374,8 +546,37 @@
             document.getElementById('routeType').textContent = route.type;
             document.getElementById('routeDescription').textContent = route.description;
 
+            // Отображаем категории маршрута
+            const categoriesContainer = document.getElementById('routeCategories');
+            categoriesContainer.innerHTML = '';
+            if (route.category && Array.isArray(route.category)) {
+                route.category.forEach(category => {
+                    const tag = document.createElement('div');
+                    tag.className = 'category-tag';
+                    tag.textContent = getCategoryName(category);
+                    categoriesContainer.appendChild(tag);
+                });
+            }
+
+            // Отображаем дополнительную информацию
+            document.getElementById('routeHowToGet').innerHTML = formatText(route.howToGet || 'Информация о способе добраться отсутствует');
+            document.getElementById('routeTips').innerHTML = formatText(route.tips || 'Советы отсутствуют');
+
             // Показываем панель информации
             document.getElementById('routeInfo').classList.remove('hidden');
+
+            // Добавляем обработчик для сворачивания/разворачивания панели
+            const toggleButton = document.getElementById('routeToggle');
+            const routeInfo = document.getElementById('routeInfo');
+
+            // Удаляем старый обработчик, если он есть
+            const newToggleButton = toggleButton.cloneNode(true);
+            toggleButton.parentNode.replaceChild(newToggleButton, toggleButton);
+
+            // Добавляем новый обработчик
+            newToggleButton.addEventListener('click', () => {
+                routeInfo.classList.toggle('collapsed');
+            });
 
             // Создаем массив координат для маршрута
             const routeCoords = route.points.map(point => point.coords);
@@ -396,16 +597,40 @@
                     iconAnchor: [15, 15]
                 });
 
+                // Создаем содержимое всплывающего окна
+                let popupContent = `
+                    <div class="point-popup">
+                        <h3>${point.title}</h3>
+                        <p>${point.description}</p>
+                        <p><strong>Что делать:</strong> ${point.activity}</p>
+                        <p class="emotion"><em>${point.emotion}</em></p>
+                `;
+
+                // Добавляем предупреждение, если оно есть
+                if (point.warning) {
+                    popupContent += `<div class="warning"><i class="fas fa-exclamation-triangle"></i> <strong>Внимание:</strong> ${point.warning}</div>`;
+                }
+
+                // Добавляем информацию о переходе, если она есть
+                if (point.transition) {
+                    popupContent += `<div class="transition"><i class="fas fa-directions"></i> <strong>Далее:</strong> ${point.transition}</div>`;
+                }
+
+                // Добавляем информацию о достопримечательности, если она есть
+                if (point.landmark) {
+                    popupContent += `<div class="landmark"><i class="fas fa-map-pin"></i> <strong>Ориентир:</strong> ${point.landmark}</div>`;
+                }
+
+                // Добавляем информацию о входе, если она есть
+                if (point.entrance) {
+                    popupContent += `<div class="entrance"><i class="fas fa-door-open"></i> <strong>Вход:</strong> ${point.entrance}</div>`;
+                }
+
+                popupContent += '</div>';
+
                 const marker = L.marker(point.coords, { icon })
                     .addTo(map)
-                    .bindPopup(`
-                        <div class="point-popup">
-                            <h3>${point.title}</h3>
-                            <p>${point.description}</p>
-                            <p><strong>Что делать:</strong> ${point.activity}</p>
-                            <p class="emotion"><em>${point.emotion}</em></p>
-                        </div>
-                    `);
+                    .bindPopup(popupContent);
 
                 markers.push(marker);
             });
